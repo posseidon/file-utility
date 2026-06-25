@@ -1,0 +1,172 @@
+[
+  {
+    "path": "/Users/Thai_Binh_Nguyen/sources/java/file-utility/pdf-utility/src/test/resources/Avatamsaka_Sutra.pdf",
+    "outputDir": "/Users/Thai_Binh_Nguyen/Documents/Avatamsaka_Sutra",
+    "chunks": [
+      {
+        "name": "Introduction",
+        "pageRanges": "7-60"
+      },
+      {
+        "name": "The Wonderful Adornments of the Leaders of the Worlds",
+        "pageRanges": "61-155"
+      },
+      {
+        "name": "Appearance of the Buddha",
+        "pageRanges": "156-181"
+      },
+      {
+        "name": "The Meditation of the Enlightening Being Universally Good",
+        "pageRanges": "182-187"
+      },
+      {
+        "name": "The Formation of the Worlds",
+        "pageRanges": "188-207"
+      },
+      {
+        "name": "The Flower Bank World",
+        "pageRanges": "208-259"
+      },
+      {
+        "name": "Vairocana",
+        "pageRanges": "260-275"
+      },
+      {
+        "name": "Names of the Buddha",
+        "pageRanges": "276-281"
+      },
+      {
+        "name": "The Four Holy Truths",
+        "pageRanges": "282-287"
+      },
+      {
+        "name": "Awakening by Light",
+        "pageRanges": "288-303"
+      },
+      {
+        "name": "An Enlightening Being Asks for Clarification",
+        "pageRanges": "304-317"
+      },
+      {
+        "name": "Purifying Practice",
+        "pageRanges": "318-335"
+      },
+      {
+        "name": "Chief in Goodness",
+        "pageRanges": "336-373"
+      },
+      {
+        "name": "Ascent to the Peak of Mount Sumeru",
+        "pageRanges": "374-376"
+      },
+      {
+        "name": "Eulogies on Mount Sumeru",
+        "pageRanges": "377-389"
+      },
+      {
+        "name": "Ten Abodes",
+        "pageRanges": "390-406"
+      },
+      {
+        "name": "Religious Practice",
+        "pageRanges": "407-409"
+      },
+      {
+        "name": "The Merit of the Initial Determination for Enlightenment",
+        "pageRanges": "410-430"
+      },
+      {
+        "name": "Clarifying Method",
+        "pageRanges": "431-443"
+      },
+      {
+        "name": "Ascent to the Palace of the Suyama Heaven",
+        "pageRanges": "444-446"
+      },
+      {
+        "name": "Eulogies in the Palace of the Suyama Heaven",
+        "pageRanges": "447-459"
+      },
+      {
+        "name": "Ten Practices",
+        "pageRanges": "460-490"
+      },
+      {
+        "name": "Ten Inexhaustible Treasuries",
+        "pageRanges": "491-502"
+      },
+      {
+        "name": "Ascent to the Palace of the Tushita Heaven",
+        "pageRanges": "503-521"
+      },
+      {
+        "name": "Eulogies in the Tushita Palace",
+        "pageRanges": "522-535"
+      },
+      {
+        "name": "Ten Dedications",
+        "pageRanges": "536-700"
+      },
+      {
+        "name": "The Ten Stages",
+        "pageRanges": "701-817"
+      },
+      {
+        "name": "The Ten Concentrations",
+        "pageRanges": "818-868"
+      },
+      {
+        "name": "The Ten Superknowledges",
+        "pageRanges": "869-875"
+      },
+      {
+        "name": "The Ten Acceptances",
+        "pageRanges": "876-894"
+      },
+      {
+        "name": "The Incalculable",
+        "pageRanges": "895-910"
+      },
+      {
+        "name": "Life Span",
+        "pageRanges": "911-911"
+      },
+      {
+        "name": "Dwelling Places of Enlightening Beings",
+        "pageRanges": "912-913"
+      },
+      {
+        "name": "Inconceivable Qualities of Buddhas",
+        "pageRanges": "914-938"
+      },
+      {
+        "name": "The Ocean of Physical Marks of the Ten Bodies of Buddha",
+        "pageRanges": "939-951"
+      },
+      {
+        "name": "The Qualities of the Buddha's Embellishments and Lights",
+        "pageRanges": "952-957"
+      },
+      {
+        "name": "The Practice of Universal Good",
+        "pageRanges": "958-975"
+      },
+      {
+        "name": "Manifestation of Buddha",
+        "pageRanges": "976-1027"
+      },
+      {
+        "name": "Detachment from the World 1",
+        "pageRanges": "1028-1140"
+      },
+      {
+        "name": "Entry into the Realm ofReality 1",
+        "pageRanges": "1141-1526"
+      },
+      {
+        "name": "Appendix 1: Technical Terminology and Symbolism in The Flower Ornament Scripture",
+        "pageRanges": "1527-1541"
+      }
+    ]
+  }
+]
