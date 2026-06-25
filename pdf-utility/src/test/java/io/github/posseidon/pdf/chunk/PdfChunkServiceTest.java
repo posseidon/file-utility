@@ -10,6 +10,7 @@ import io.github.posseidon.pdf.chunk.model.PageRange;
 import io.github.posseidon.pdf.chunk.model.PageRanges;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -147,6 +148,7 @@ class PdfChunkServiceTest {
         }
     }
 
+    @Disabled("Running chunking on local file system.")
     @Test
     @DisplayName("chunk all chapters — write to ~/Downloads/Avatamsaka_Sutra")
     void chunksToDownloadsFolder() throws IOException {
