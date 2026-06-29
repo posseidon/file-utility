@@ -6,7 +6,7 @@
 
     <groupId>io.github.posseidon</groupId>
     <artifactId>file-utility-parent</artifactId>
-    <version>0.1.2</version>
+    <version>0.1.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>file-utility-parent</name>
@@ -48,6 +48,7 @@
         <tika.version>3.3.1</tika.version>
         <pdfbox.version>3.0.7</pdfbox.version>
         <junit.version>5.11.4</junit.version>
+        <assertj.version>3.27.3</assertj.version>
         <jackson.version>2.18.2</jackson.version>
 
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
@@ -94,6 +95,13 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <!-- Inter-module dependency, version-pinned to the reactor -->

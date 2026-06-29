@@ -11,8 +11,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class LocalFileSystemStorageTest {
 
@@ -25,9 +24,9 @@ class LocalFileSystemStorageTest {
         StoredObject stored = storage.write(
                 new LocalFileReference(target), new ByteArrayInputStream(data));
 
-        assertEquals(data.length, stored.sizeBytes());
+        assertThat(stored.sizeBytes()).isEqualTo(data.length);
         try (InputStream in = storage.openStream(new LocalFileReference(target))) {
-            assertArrayEquals(data, in.readAllBytes());
+            assertThat(in.readAllBytes()).isEqualTo(data);
         }
     }
 }
