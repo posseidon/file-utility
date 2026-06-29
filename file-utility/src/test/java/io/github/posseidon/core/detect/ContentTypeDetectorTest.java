@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ContentTypeDetectorTest {
 
@@ -15,6 +15,6 @@ class ContentTypeDetectorTest {
         String type = detector.detect(
                 new ByteArrayInputStream("hello, world".getBytes(StandardCharsets.UTF_8)),
                 "notes.txt");
-        assertEquals("text/plain", type);
+        assertThat(type).isEqualTo("text/plain");
     }
 }

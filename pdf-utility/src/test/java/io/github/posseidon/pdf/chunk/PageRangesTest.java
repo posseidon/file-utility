@@ -6,37 +6,39 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PageRangesTest {
 
     @Test
     void parsesMultipleRanges() {
         List<PageRange> ranges = PageRanges.parse("1-3,4-10,11-", 12);
-        assertEquals(3, ranges.size());
-        assertEquals(new PageRange(1, 3), ranges.get(0));
-        assertEquals(new PageRange(4, 10), ranges.get(1));
-        assertEquals(new PageRange(11, 12), ranges.get(2)); // open-ended runs to total
+        assertThat(ranges).hasSize(3);
+        assertThat(ranges.get(0)).isEqualTo(new PageRange(1, 3));
+        assertThat(ranges.get(1)).isEqualTo(new PageRange(4, 10));
+        assertThat(ranges.get(2)).isEqualTo(new PageRange(11, 12));
     }
 
     @Test
     void parsesSinglePageToken() {
-        assertEquals(List.of(new PageRange(5, 5)), PageRanges.parse("5", 10));
+        assertThat(PageRanges.parse("5", 10)).isEqualTo(List.of(new PageRange(5, 5)));
     }
 
     @Test
     void clampsEndToTotal() {
-        assertEquals(List.of(new PageRange(8, 10)), PageRanges.parse("8-99", 10));
+        assertThat(PageRanges.parse("8-99", 10)).isEqualTo(List.of(new PageRange(8, 10)));
     }
 
     @Test
     void rejectsStartBeyondTotal() {
-        assertThrows(IllegalArgumentException.class, () -> PageRanges.parse("20-25", 10));
+        assertThatThrownBy(() -> PageRanges.parse("20-25", 10))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void rejectsBlank() {
-        assertThrows(IllegalArgumentException.class, () -> PageRanges.parse("  ", 10));
+        assertThatThrownBy(() -> PageRanges.parse("  ", 10))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

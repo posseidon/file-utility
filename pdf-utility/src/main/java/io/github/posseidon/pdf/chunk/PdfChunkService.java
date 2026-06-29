@@ -20,12 +20,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * High-level entry point: splits one or more PDFs by the specs in their {@link ChunkFixture}s
  * and persists each chunk through the supplied {@link OutputSink}.
  */
 public final class PdfChunkService {
+
+    private static final System.Logger LOGGER = System.getLogger(PdfChunkService.class.getName());
 
     private record IndexedRange(int index, PageRange range, LocalChunkNaming naming) {}
 
@@ -66,10 +69,14 @@ public final class PdfChunkService {
      */
     private List<PdfChunk> execute(Collection<ChunkFixture> fixtures,
                                    ExecutorService cpuPool, Executor ioPool) {
+        AtomicInteger pdfChunkCounter = new AtomicInteger();
         List<CompletableFuture<PdfChunk>> allFutures = fixtures.stream()
                 .flatMap(fixture -> submit(fixture, cpuPool, ioPool).stream())
+                .map(f -> f.thenApply(chunk -> { pdfChunkCounter.incrementAndGet(); return chunk; }))
                 .toList();
-        return allFutures.stream().map(CompletableFuture::join).toList();
+        List<PdfChunk> results = allFutures.stream().map(CompletableFuture::join).toList();
+        LOGGER.log(System.Logger.Level.INFO, "Processed {0} PDF chunks", pdfChunkCounter.get());
+        return results;
     }
 
     /** Phase 1 — reads the fixture, builds all range tasks, and enqueues one future per range. */

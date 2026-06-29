@@ -30,8 +30,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(TimingExtension.class)
 class PdfChunkServiceTest {
@@ -56,14 +55,14 @@ class PdfChunkServiceTest {
         PdfChunkService service = new PdfChunkService(new LocalFileSystemStorage());
         List<PdfChunk> manifest = service.chunk(List.of(fixture));
 
-        assertEquals(2, manifest.size());
-        assertEquals(4, manifest.get(0).pageCount());
-        assertEquals(6, manifest.get(1).pageCount());
+        assertThat(manifest).hasSize(2);
+        assertThat(manifest.get(0).pageCount()).isEqualTo(4);
+        assertThat(manifest.get(1).pageCount()).isEqualTo(6);
         for (PdfChunk chunk : manifest) {
-            assertTrue(chunk.sizeBytes() > 0, "chunk should be non-empty");
+            assertThat(chunk.sizeBytes()).as("chunk should be non-empty").isGreaterThan(0);
         }
         try (Stream<Path> files = Files.list(outDir)) {
-            assertEquals(2, files.count());
+            assertThat(files.count()).isEqualTo(2);
         }
     }
 
@@ -78,13 +77,13 @@ class PdfChunkServiceTest {
 
         List<PdfChunk> manifest = service.chunk(List.of(fixture.withOutputDir(tmp)));
 
-        assertEquals(fixture.chunks().size(), manifest.size(), "manifest size must match chapter count");
+        assertThat(manifest).as("manifest size must match chapter count").hasSize(fixture.chunks().size());
         for (int i = 0; i < manifest.size(); i++) {
             PdfChunk chunk = manifest.get(i);
-            assertTrue(chunk.sizeBytes() > 0, "chunk is empty: " + fixture.chunks().get(i).name());
+            assertThat(chunk.sizeBytes()).as("chunk is empty: " + fixture.chunks().get(i).name()).isGreaterThan(0);
         }
         try (Stream<Path> files = Files.list(tmp)) {
-            assertEquals(fixture.chunks().size(), files.count(), "one file per chapter expected");
+            assertThat(files.count()).as("one file per chapter expected").isEqualTo(fixture.chunks().size());
         }
     }
 
@@ -100,10 +99,11 @@ class PdfChunkServiceTest {
 
             List<PdfChunk> manifest = service.chunk(List.of(fixture.withOutputDir(outDir)));
 
-            assertEquals(fixture.chunks().size(), manifest.size());
+            assertThat(manifest).hasSize(fixture.chunks().size());
             for (int i = 0; i < manifest.size(); i++) {
-                assertTrue(manifest.get(i).sizeBytes() > 0,
-                        "empty chunk for: " + fixture.chunks().get(i).name());
+                assertThat(manifest.get(i).sizeBytes())
+                        .as("empty chunk for: " + fixture.chunks().get(i).name())
+                        .isGreaterThan(0);
             }
         }
     }
@@ -138,11 +138,12 @@ class PdfChunkServiceTest {
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                         .get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
-                assertEquals(allRanges.size(), results.size());
+                assertThat(results).hasSize(allRanges.size());
                 results.sort(Comparator.comparingInt(pc -> pc.range().start()));
                 for (int i = 0; i < allRanges.size(); i++) {
-                    assertEquals(allRanges.get(i).count(), pageCount(results.get(i).content()),
-                            "page count mismatch for: " + fixture.chunks().get(i).name());
+                    assertThat(pageCount(results.get(i).content()))
+                            .as("page count mismatch for: " + fixture.chunks().get(i).name())
+                            .isEqualTo(allRanges.get(i).count());
                 }
             }
         }
@@ -161,9 +162,9 @@ class PdfChunkServiceTest {
                 fixtures.stream().map(f -> f.withOutputDir(outDir)).toList());
 
         int expectedTotal = fixtures.stream().mapToInt(f -> f.chunks().size()).sum();
-        assertEquals(expectedTotal, manifest.size());
+        assertThat(manifest).hasSize(expectedTotal);
         for (PdfChunk chunk : manifest) {
-            assertTrue(chunk.sizeBytes() > 0);
+            assertThat(chunk.sizeBytes()).isGreaterThan(0);
         }
     }
 
