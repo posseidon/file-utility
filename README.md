@@ -29,11 +29,10 @@ Compiles both modules, runs all tests, and installs the jars into `~/.m2`.
 ### Maven dependency
 
 ```xml
-
 <dependency>
     <groupId>io.github.posseidon</groupId>
     <artifactId>file-utility</artifactId>
-    <version>0.1.2-SNAPSHOT</version>
+    <version>0.1.5-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -49,7 +48,7 @@ import io.github.posseidon.core.detect.ContentTypeDetector;
 var detector = new ContentTypeDetector();
 
 // Detect from a file on disk (magic-byte sniff + extension hint)
-String mime = detector.detect(Path.of("report.pdf"));   // "application/pdf"
+String mime = detector.detect(Path.of("report.pdf"));    // "application/pdf"
 
 // Detect from a stream with a filename hint
 String mime2 = detector.detect(inputStream, "photo.png"); // "image/png"
@@ -103,26 +102,158 @@ FileMetadata meta = extractor.extract(Path.of("report.pdf"));
 
 #### `FileMetadata` record fields
 
-| Field        | Type                  | Description                                            |
-|--------------|-----------------------|--------------------------------------------------------|
-| `origin`     | `String`              | Hostname of the machine that extracted the metadata    |
-| `path`       | `Path`                | Absolute path to the file                              |
-| `name`       | `String`              | File name (last segment of the path)                   |
-| `extension`  | `String`              | Lowercase extension without the dot, or `""` if absent |
-| `size`       | `long`                | File size in bytes                                     |
-| `createdAt`  | `Instant`             | File creation timestamp (from the OS)                  |
-| `modifiedAt` | `Instant`             | Last-modified timestamp (from the OS)                  |
-| `owner`      | `String`              | OS file owner name                                     |
-| `mimeType`   | `String`              | MIME type detected by Tika (e.g. `"text/plain"`)       |
-| `mediaType`  | `MediaType`           | Coarser category derived from the MIME type            |
-| `sha256`     | `String`              | 64-char lowercase hex digest                           |
-| `extra`      | `Map<String, String>` | Immutable map of additional Tika metadata (EXIF, etc.) |
+| Field        | Type                  | Description                                                                          |
+|--------------|-----------------------|--------------------------------------------------------------------------------------|
+| `origin`     | `String`              | Hostname of the machine that extracted the metadata                                  |
+| `path`       | `Path`                | Absolute path to the file                                                            |
+| `name`       | `String`              | File name (last segment of the path)                                                 |
+| `extension`  | `String`              | Lowercase extension without the dot, or `""` if absent                               |
+| `size`       | `long`                | File size in bytes                                                                   |
+| `createdAt`  | `Instant`             | File creation timestamp (from the OS)                                                |
+| `modifiedAt` | `Instant`             | Last-modified timestamp (from the OS)                                                |
+| `owner`      | `String`              | OS file owner name                                                                   |
+| `mimeType`   | `String`              | MIME type detected by Tika (e.g. `"text/plain"`)                                    |
+| `mediaType`  | `MediaType`           | Coarser category derived from the MIME type                                          |
+| `sha256`     | `String`              | 64-char lowercase hex digest                                                         |
+| `extra`      | `Map<String, String>` | Immutable map of additional Tika metadata (EXIF, etc.)                              |
+| `insights`   | `DocumentInsights`    | Structured LLM analysis (null when no classifier is configured — see section below) |
 
 #### `MediaType` enum
 
 `TEXT`, `CODE`, `IMAGE`, `VIDEO`, `AUDIO`, `DOCUMENT`, `ARCHIVE`, `DATA`, `OTHER`
 
 MIME-to-category mapping is handled by `MediaType.fromMime(String)`.
+
+---
+
+### File filtering
+
+Both `FileDiscoveryOrchestrator` and `DirectoryWatcher` accept a `Predicate<Path>`
+that controls which files are submitted to the processor chain. The default
+constructor already **skips hidden files** (dotfiles and OS-hidden entries); use
+`withFilter` to layer on additional rules.
+
+#### Built-in filter: skip hidden files (default)
+
+```java
+// No explicit filter needed — hidden files are excluded automatically.
+new FileDiscoveryOrchestrator(processor).discoverAndProcess(Path.of("/data"));
+```
+
+#### Built-in filter: skip hidden files and source-code files
+
+`FileUtility.processableFileFilter` combines the hidden-file check with Tika
+magic-byte detection so no extension list needs to be maintained.
+
+```java
+import io.github.posseidon.core.detect.ContentTypeDetector;
+import io.github.posseidon.core.util.FileUtility;
+
+var detector = new ContentTypeDetector();
+
+FileDiscoveryOrchestrator.withFilter(
+        FileUtility.processableFileFilter(detector),
+        processor
+).discoverAndProcess(Path.of("/projects"));
+```
+
+Files detected as `text/x-java`, `text/x-python`, `text/x-c`, and all other
+code MIME types map to `MediaType.CODE` and are skipped.
+
+#### Skip archive files (.zip, .jar, .tar, .gz, …)
+
+```java
+import io.github.posseidon.core.model.MediaType;
+
+var detector = new ContentTypeDetector();
+
+Predicate<Path> noArchives = path ->
+        !FileUtility.isHidden(path)
+        && MediaType.fromMime(detector.detect(path)) != MediaType.ARCHIVE;
+
+FileDiscoveryOrchestrator.withFilter(noArchives, processor)
+        .discoverAndProcess(Path.of("/vault"));
+```
+
+#### Skip image files
+
+```java
+Predicate<Path> noImages = path ->
+        !FileUtility.isHidden(path)
+        && MediaType.fromMime(detector.detect(path)) != MediaType.IMAGE;
+
+FileDiscoveryOrchestrator.withFilter(noImages, processor)
+        .discoverAndProcess(Path.of("/inbox"));
+```
+
+#### Skip multiple media types (source code, archives, images, video)
+
+Predicates compose naturally with `&&`:
+
+```java
+var detector = new ContentTypeDetector();
+
+Predicate<Path> documentsOnly = path -> {
+    if (FileUtility.isHidden(path)) return false;
+    MediaType mt = MediaType.fromMime(detector.detect(path));
+    return mt != MediaType.CODE
+        && mt != MediaType.ARCHIVE
+        && mt != MediaType.IMAGE
+        && mt != MediaType.VIDEO
+        && mt != MediaType.AUDIO;
+};
+
+FileDiscoveryOrchestrator.withFilter(documentsOnly, processor)
+        .discoverAndProcess(Path.of("/documents"));
+```
+
+#### Filter by file extension
+
+When you need a simple extension check without MIME detection overhead:
+
+```java
+import java.util.Set;
+
+Set<String> allowed = Set.of("pdf", "docx", "xlsx", "txt");
+
+Predicate<Path> extensionFilter = path ->
+        !FileUtility.isHidden(path)
+        && allowed.contains(FileUtility.extension(path));
+
+FileDiscoveryOrchestrator.withFilter(extensionFilter, processor)
+        .discoverAndProcess(Path.of("/reports"));
+```
+
+#### Filter by file size
+
+```java
+// Skip files larger than 100 MB
+Predicate<Path> sizeFilter = path -> {
+    try {
+        return !FileUtility.isHidden(path) && Files.size(path) <= 100_000_000L;
+    } catch (IOException e) {
+        return false;
+    }
+};
+
+FileDiscoveryOrchestrator.withFilter(sizeFilter, processor)
+        .discoverAndProcess(Path.of("/uploads"));
+```
+
+#### The same filter API on `DirectoryWatcher`
+
+`DirectoryWatcher.withFilter` accepts identical arguments:
+
+```java
+var watcher = DirectoryWatcher.withFilter(
+        FileUtility.processableFileFilter(detector),
+        processor);
+
+try (watcher) {
+    watcher.startWatching(Path.of("/inbox"));
+    Thread.sleep(Duration.ofHours(8));
+}
+```
 
 ---
 
@@ -142,22 +273,16 @@ import io.github.posseidon.core.hash.Sha256Hash;
 var extractor = new MetadataExtractor(new Sha256Hash(), new ContentTypeDetector());
 var processor = new MetadataExtractionProcessor(extractor, meta -> System.out.println(meta));
 
-new
-
-FileDiscoveryOrchestrator(processor).
-
-discoverAndProcess(Path.of("/data/files"));
+new FileDiscoveryOrchestrator(processor).discoverAndProcess(Path.of("/data/files"));
 ```
 
 Multiple processors are chained left-to-right (Chain of Responsibility):
 
 ```java
 new FileDiscoveryOrchestrator(
-        validateProcessor,          // runs first for every file
-        metadataExtractionProcessor // runs second for every file
-).
-
-discoverAndProcess(root);
+        validateProcessor,           // runs first for every file
+        metadataExtractionProcessor  // runs second for every file
+).discoverAndProcess(root);
 ```
 
 ---
@@ -181,9 +306,7 @@ direct submission to any `ExecutorService`:
 
 ```java
 Callable<Void> task = processor.bind(Path.of("file.txt"));
-executor.
-
-submit(task);
+executor.submit(task);
 ```
 
 #### `MetadataConsumer` — post-extraction operations
@@ -212,9 +335,7 @@ import io.github.posseidon.core.ingest.processor.MetadataExtractionProcessor;
 MetadataConsumer consumer = meta -> publish(meta);
 var processor = new MetadataExtractionProcessor(extractor, consumer);
 
-processor.
-
-process(Path.of("report.pdf")); // extract → publish
+processor.process(Path.of("report.pdf")); // extract → publish
 ```
 
 ---
@@ -245,25 +366,112 @@ A non-2xx response is logged as a warning; no exception is thrown.
 
 ---
 
+### LLM document analysis
+
+`OllamaDocumentTypeClassifier` sends document text to a local
+[Ollama](https://ollama.com) instance and returns a `DocumentInsights` record
+populated from a single JSON inference call (`temperature=0.0`, `stream=false`).
+
+```java
+import io.github.posseidon.core.classify.OllamaDocumentTypeClassifier;
+import io.github.posseidon.core.model.DocumentInsights;
+
+var classifier = new OllamaDocumentTypeClassifier(
+        URI.create("http://localhost:11434/api/generate"),
+        "mistral:7b",
+        4_000);             // max characters sent to the model
+
+// Wire it into MetadataExtractor — classification runs automatically per file
+var extractor = new MetadataExtractor(
+        new Sha256Hash(), new ContentTypeDetector(), classifier);
+
+FileMetadata meta = extractor.extract(Path.of("invoice.pdf"));
+DocumentInsights insights = meta.insights();
+
+System.out.println(insights.documentType());   // "invoice"
+System.out.println(insights.summary());        // "Invoice from Acme Corp for $100."
+System.out.println(insights.actionRequired()); // true
+System.out.println(insights.actionDeadline()); // "2024-02-01"
+System.out.println(insights.tags());           // ["payment", "vendor"]
+System.out.println(insights.organizations());  // ["Acme Corp"]
+System.out.println(insights.containsPii());    // true
+```
+
+#### `DocumentInsights` fields
+
+| Field            | Type                  | Description                                                         |
+|------------------|-----------------------|---------------------------------------------------------------------|
+| `documentType`   | `String`              | `lowercase_snake_case` type (e.g. `invoice`, `utility_bill`)        |
+| `language`       | `String`              | ISO 639-1 code (e.g. `en`, `de`, `hu`) — null if not detected      |
+| `summary`        | `String`              | One factual sentence describing the document — null if not detected |
+| `tags`           | `List<String>`        | 3–8 searchable keywords                                             |
+| `actionRequired` | `boolean`             | True if the reader must pay, sign, or respond                       |
+| `actionDeadline` | `String`              | ISO date (`YYYY-MM-DD`) of the deadline — null if none              |
+| `keyDates`       | `Map<String, String>` | Named dates found in the document (e.g. `issue_date`, `due_date`)   |
+| `amounts`        | `List<String>`        | Monetary values with a short label (e.g. `"total: $100.00"`)       |
+| `organizations`  | `List<String>`        | Organization names mentioned in the document                        |
+| `people`         | `List<String>`        | Person names mentioned in the document                              |
+| `containsPii`    | `boolean`             | True if personal identifiers, addresses, or account numbers appear  |
+
+#### Fallback behaviour
+
+If the model returns invalid JSON, `DocumentInsights` is populated with only
+`documentType` taken from the first line of the response — all other fields are
+null / empty / false. The classifier never throws; `insights` is null only when
+no classifier is configured.
+
+#### Calling the classifier directly
+
+You can also call the classifier outside the extraction pipeline — useful for
+re-classifying already-stored text or batching multiple documents concurrently:
+
+```java
+import java.util.concurrent.CompletableFuture;
+
+var classifier = new OllamaDocumentTypeClassifier(endpoint, "llama3", 4_000);
+
+// Async — non-blocking (backed by HttpClient.sendAsync)
+CompletableFuture<DocumentInsights> future = classifier.analyzeAsync(text);
+future.thenAccept(insights -> index(insights));
+
+// Fan out multiple documents in parallel
+List<CompletableFuture<DocumentInsights>> futures = texts.stream()
+        .map(classifier::analyzeAsync)
+        .toList();
+
+CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+```
+
+---
+
 ### Full pipeline example
 
 ```java
-var extractor = new MetadataExtractor(new Sha256Hash(), new ContentTypeDetector());
+var detector  = new ContentTypeDetector();
+var extractor = new MetadataExtractor(
+        new Sha256Hash(),
+        detector,
+        new OllamaDocumentTypeClassifier(
+                URI.create("http://localhost:11434/api/generate"), "mistral:7b", 4_000));
+
 var publisher = new RestMetadataPublisher(
         URI.create("https://ingest.example.com/files"),
         meta -> objectMapper.writeValueAsString(meta));
+
 var auditLog = (MetadataConsumer) meta ->
         Files.writeString(auditPath, meta.sha256() + "\n", APPEND);
 
-var consumer = publisher.andThen(auditLog);                // chain consumers
-var processor = new MetadataExtractionProcessor(extractor, consumer);
+var processor = new MetadataExtractionProcessor(extractor, publisher.andThen(auditLog));
 
-new
+// Only process user documents — skip hidden files, source code, and archives
+Predicate<Path> filter = path -> {
+    if (FileUtility.isHidden(path)) return false;
+    MediaType mt = MediaType.fromMime(detector.detect(path));
+    return mt != MediaType.CODE && mt != MediaType.ARCHIVE;
+};
 
-FileDiscoveryOrchestrator(processor)
-        .
-
-discoverAndProcess(Path.of("/vault"));
+FileDiscoveryOrchestrator.withFilter(filter, processor)
+        .discoverAndProcess(Path.of("/vault"));
 ```
 
 ---
@@ -276,17 +484,14 @@ processing each event on a dedicated virtual thread.
 ```java
 import io.github.posseidon.core.ingest.DirectoryWatcher;
 
-try(var watcher = new DirectoryWatcher(processor)){
-        watcher.
-
-startWatching(Path.of("/inbox"));
-        Thread.
-
-sleep(Duration.ofHours(8)); // keep process alive
-        }
+try (var watcher = new DirectoryWatcher(processor)) {
+    watcher.startWatching(Path.of("/inbox"));
+    Thread.sleep(Duration.ofHours(8)); // keep process alive
+}
 ```
 
-`DirectoryWatcher` accepts the same varargs processors as `FileDiscoveryOrchestrator`.
+`DirectoryWatcher` accepts the same varargs processors as `FileDiscoveryOrchestrator`
+and the same `withFilter` factory for custom path predicates.
 
 ---
 
@@ -304,17 +509,12 @@ var ref = new LocalFileReference(Path.of("out/result.bin"));
 
 // Write
 StoredObject stored = storage.write(ref, inputStream);
-System.out.
-
-println(stored.name() +": "+stored.
-
-sizeBytes() +" bytes");
+System.out.println(stored.name() + ": " + stored.sizeBytes() + " bytes");
 
 // Read
-        try(
-InputStream in = storage.openStream(ref)){
-        // consume in
-        }
+try (InputStream in = storage.openStream(ref)) {
+    // consume in
+}
 
 long bytes = storage.size(ref);
 ```
@@ -331,11 +531,10 @@ automatically route writes through a virtual-thread I/O pool.
 ### Maven dependency
 
 ```xml
-
 <dependency>
     <groupId>io.github.posseidon</groupId>
     <artifactId>pdf-utility</artifactId>
-    <version>0.1.2-SNAPSHOT</version>
+    <version>0.1.5-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -358,30 +557,18 @@ var fixture = new ChunkFixture(
         "report.pdf",
         "out/chunks",
         List.of(
-                new ChunkSpec("intro", "1-3"),    // pages 1-3
-                new ChunkSpec("body", "4-10"),   // pages 4-10
-                new ChunkSpec("appendix", "11-")     // page 11 to end
+                new ChunkSpec("intro",    "1-3"),  // pages 1–3
+                new ChunkSpec("body",     "4-10"), // pages 4–10
+                new ChunkSpec("appendix", "11-")   // page 11 to end
         ));
 
 List<PdfChunk> manifest = service.chunk(List.of(fixture));
 
-manifest.
-
-forEach(c ->
-        System.out.
-
-printf("%s  pages=%d  bytes=%d%n",
-       c.storedObject().
-
-name(),c.
-
-range().
-
-pageCount(),c.
-
-storedObject().
-
-sizeBytes()));
+manifest.forEach(c ->
+        System.out.printf("%s  pages=%d  bytes=%d%n",
+                c.storedObject().name(),
+                c.range().pageCount(),
+                c.storedObject().sizeBytes()));
 ```
 
 Output files are written to `out/chunks/` as:
@@ -417,14 +604,15 @@ offloaded to a separate virtual-thread I/O pool automatically.
 
 ## Extension points
 
-| Interface             | Implement to…                                                |
-|-----------------------|--------------------------------------------------------------|
-| `Hasher`              | Swap the hash algorithm (MD5, BLAKE3, etc.)                  |
-| `ContentTypeDetector` | Replace Tika with a custom MIME detector                     |
-| `FileProcessor`       | Add any per-file step to the processing chain                |
-| `MetadataConsumer`    | Add any post-extraction sink (database, queue, audit log, …) |
-| `OutputSink`          | Write chunks or stored objects to a custom backend           |
-| `SourceResolver`      | Read from a custom backend (cloud, network share, …)         |
+| Interface             | Implement to…                                                              |
+|-----------------------|----------------------------------------------------------------------------|
+| `Hasher`              | Swap the hash algorithm (MD5, BLAKE3, etc.)                                |
+| `ContentTypeDetector` | Replace Tika with a custom MIME detector                                   |
+| `FileProcessor`       | Add any per-file step to the processing chain                              |
+| `MetadataConsumer`    | Add any post-extraction sink (database, queue, audit log, …)               |
+| `DocumentTypeClassifier` | Plug in a different LLM backend or a rule-based classifier              |
+| `OutputSink`          | Write chunks or stored objects to a custom backend                         |
+| `SourceResolver`      | Read from a custom backend (cloud, network share, …)                       |
 
 ---
 
@@ -436,6 +624,7 @@ All production classes in both modules are thread-safe:
 - `Sha256Hash` — creates a new `MessageDigest` per call; no shared mutable state.
 - `MetadataExtractor` — all fields are `final`; `AutoDetectParser` is a shared static (thread-safe by Tika spec).
 - `MetadataExtractionProcessor` — all fields are `final`; delegates to the above.
+- `OllamaDocumentTypeClassifier` — all fields are `final`; `HttpClient` is designed for concurrent use.
 - `RestMetadataPublisher` — all fields are `final`; `HttpClient` is designed for concurrent use.
 - `FileDiscoveryOrchestrator` — submits one virtual thread per file via `invokeAll`; no shared mutable state.
 - `PdfChunkService` — uses `CompletableFuture` with per-thread `PDDocument` instances (one `ThreadLocal` per fixture).
