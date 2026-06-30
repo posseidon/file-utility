@@ -22,7 +22,8 @@ public final class FileUtility {
      */
     public static Predicate<Path> processableFileFilter(ContentTypeDetector detector) {
         return path -> !isHidden(path)
-                && MediaType.fromMime(detector.detect(path)) != MediaType.CODE;
+                && MediaType.fromMime(detector.detect(path)) != MediaType.CODE
+                && MediaType.fromMime(detector.detect(path)) != MediaType.ARCHIVE;
     }
 
     public static boolean isHidden(Path path) {
