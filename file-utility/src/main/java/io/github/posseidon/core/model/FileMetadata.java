@@ -2,6 +2,7 @@ package io.github.posseidon.core.model;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Map;
 
 public record FileMetadata(
@@ -16,5 +17,6 @@ public record FileMetadata(
         String mimeType,
         MediaType mediaType,
         String sha256,
+        Collection<String> directories,
         Map<String, String> extra
 ) {}

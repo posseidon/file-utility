@@ -14,7 +14,9 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Local-filesystem implementation of both {@link SourceResolver} and {@link OutputSink}. */
+/**
+ * Local-filesystem implementation of both {@link SourceResolver} and {@link OutputSink}.
+ */
 public final class LocalFileSystemStorage implements SourceResolver, OutputSink {
 
     @Override

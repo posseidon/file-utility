@@ -13,7 +13,9 @@ import java.util.stream.Stream;
 public final class ChunkFixtures {
     private ChunkFixtures() {}
 
-    /** Loads all {@link ChunkFixture} entries from {@code chunks.json}. */
+    /**
+     * Loads all {@link ChunkFixture} entries from {@code chunks.json}.
+     */
     public static List<ChunkFixture> load() throws IOException {
         try (InputStream in = ChunkFixtures.class
                 .getClassLoader().getResourceAsStream("chunks.json")) {
@@ -21,12 +23,16 @@ public final class ChunkFixtures {
         }
     }
 
-    /** One {@link ChunkFixture} per JSON entry — for whole-PDF parameterized tests. */
+    /**
+     * One {@link ChunkFixture} per JSON entry — for whole-PDF parameterized tests.
+     */
     public static Stream<Arguments> fixtureStream() throws IOException {
         return load().stream().map(Arguments::of);
     }
 
-    /** Flattened: one {@code (chunkName, pdfPath, pageRanges)} per {@link ChunkSpec}. */
+    /**
+     * Flattened: one {@code (chunkName, pdfPath, pageRanges)} per {@link ChunkSpec}.
+     */
     public static Stream<Arguments> stream() throws IOException {
         return load().stream()
                 .flatMap(f -> f.chunks().stream()

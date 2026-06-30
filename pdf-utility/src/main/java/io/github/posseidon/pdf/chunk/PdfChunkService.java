@@ -72,16 +72,21 @@ public final class PdfChunkService {
         AtomicInteger pdfChunkCounter = new AtomicInteger();
         List<CompletableFuture<PdfChunk>> allFutures = fixtures.stream()
                 .flatMap(fixture -> submit(fixture, cpuPool, ioPool).stream())
-                .map(f -> f.thenApply(chunk -> { pdfChunkCounter.incrementAndGet(); return chunk; }))
+                .map(f -> f.thenApply(chunk -> {
+                    pdfChunkCounter.incrementAndGet();
+                    return chunk;
+                }))
                 .toList();
         List<PdfChunk> results = allFutures.stream().map(CompletableFuture::join).toList();
         LOGGER.log(System.Logger.Level.INFO, "Processed {0} PDF chunks", pdfChunkCounter.get());
         return results;
     }
 
-    /** Phase 1 — reads the fixture, builds all range tasks, and enqueues one future per range. */
+    /**
+     * Phase 1 — reads the fixture, builds all range tasks, and enqueues one future per range.
+     */
     private List<CompletableFuture<PdfChunk>> submit(ChunkFixture fixture,
-                                                      ExecutorService cpuPool, Executor ioPool) {
+                                                     ExecutorService cpuPool, Executor ioPool) {
         try {
             byte[] pdfBytes = Files.readAllBytes(fixture.resolvedPath());
             List<IndexedRange> tasks = buildTasks(fixture, pdfBytes);
@@ -130,9 +135,11 @@ public final class PdfChunkService {
         });
     }
 
-    /** Builds the split → write pipeline for one range task. */
+    /**
+     * Builds the split → write pipeline for one range task.
+     */
     private CompletableFuture<PdfChunk> toFuture(IndexedRange task, ThreadLocal<PDDocument> threadDoc,
-                                                   ExecutorService cpuPool, Executor ioPool) {
+                                                 ExecutorService cpuPool, Executor ioPool) {
         CompletableFuture<PageContent> split = CompletableFuture.supplyAsync(() -> {
             try {
                 return new PdfSplitTask(threadDoc.get(), task.range()).call();
@@ -144,7 +151,9 @@ public final class PdfChunkService {
         return split.thenApplyAsync(content -> writeChunk(task, content), ioPool);
     }
 
-    /** Persists one split chunk through the {@link OutputSink} and wraps the result. */
+    /**
+     * Persists one split chunk through the {@link OutputSink} and wraps the result.
+     */
     private PdfChunk writeChunk(IndexedRange task, PageContent content) {
         StoredObject stored = outputSink.write(
                 task.naming().targetFor(task.index(), content.range()),

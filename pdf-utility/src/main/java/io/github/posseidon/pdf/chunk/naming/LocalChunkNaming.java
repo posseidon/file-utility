@@ -7,7 +7,9 @@ import io.github.posseidon.pdf.chunk.model.PageRange;
 import java.nio.file.Path;
 import java.util.Objects;
 
-/** Names chunks {@code <baseName>_<NNN>_p<start>-<end>.pdf} inside a directory. */
+/**
+ * Names chunks {@code <baseName>_<NNN>_p<start>-<end>.pdf} inside a directory.
+ */
 public final class LocalChunkNaming implements ChunkNaming {
 
     private final Path directory;

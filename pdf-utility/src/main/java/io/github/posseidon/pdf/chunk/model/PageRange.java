@@ -1,6 +1,8 @@
 package io.github.posseidon.pdf.chunk.model;
 
-/** A 1-based, inclusive range of pages. */
+/**
+ * A 1-based, inclusive range of pages.
+ */
 public record PageRange(int start, int end) {
 
     public PageRange {
@@ -12,7 +14,9 @@ public record PageRange(int start, int end) {
         }
     }
 
-    /** Number of pages covered by this range. */
+    /**
+     * Number of pages covered by this range.
+     */
     public int count() {
         return end - start + 1;
     }
