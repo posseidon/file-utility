@@ -18,5 +18,6 @@ public record FileMetadata(
         MediaType mediaType,
         String sha256,
         Collection<String> directories,
-        Map<String, String> extra
+        Map<String, String> extra,
+        DocumentInsights insights
 ) {}

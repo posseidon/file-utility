@@ -27,6 +27,10 @@ public final class ContentTypeDetector {
         }
     }
 
+    public boolean isPdf(Path path) {
+        return PDF_MIME_TYPE.equals(detect(path));
+    }
+
     /**
      * Detect the MIME type of a file on disk.
      */
@@ -36,9 +40,5 @@ public final class ContentTypeDetector {
         } catch (IOException e) {
             throw new FileUtilityException("Content type detection failed for: " + path, e);
         }
-    }
-
-    public boolean isPdf(Path path) {
-        return PDF_MIME_TYPE.equals(detect(path));
     }
 }

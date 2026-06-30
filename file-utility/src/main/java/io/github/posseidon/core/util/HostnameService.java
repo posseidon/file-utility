@@ -16,16 +16,16 @@ public final class HostnameService {
                         .orElseGet(this::resolveDnsHostname);
     }
 
-    public HostnameService(Supplier<String> customProvider) {
-        this.hostnameProvider = customProvider;
-    }
-
     private String resolveDnsHostname() {
         try {
             return InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
             return "unknown-host";
         }
+    }
+
+    public HostnameService(Supplier<String> customProvider) {
+        this.hostnameProvider = customProvider;
     }
 
     public String getMachineName() {

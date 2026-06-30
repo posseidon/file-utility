@@ -9,8 +9,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 public class Sha256Hash implements Hasher {
-    private static final int BUFFER = 8_192;
     public static final String SHA_256 = "SHA-256";
+    private static final int BUFFER = 8_192;
 
     @Override
     public String hash(Path path) throws IOException, InterruptedException {

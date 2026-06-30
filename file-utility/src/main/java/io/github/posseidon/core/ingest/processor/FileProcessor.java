@@ -5,8 +5,6 @@ import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
 public interface FileProcessor {
-    void process(Path path) throws IOException, InterruptedException;
-
     /**
      * Binds this processor to a specific path, producing a {@link Callable} the executor can submit directly.
      */
@@ -16,6 +14,8 @@ public interface FileProcessor {
             return null;
         };
     }
+
+    void process(Path path) throws IOException, InterruptedException;
 
     default FileProcessor andThen(FileProcessor next) {
         return path -> {

@@ -144,6 +144,12 @@ class PdfChunkServiceTest {
         }
     }
 
+    private static int pageCount(byte[] pdf) throws IOException {
+        try (PDDocument document = Loader.loadPDF(pdf)) {
+            return document.getNumberOfPages();
+        }
+    }
+
     @Disabled("Running chunking on local file system.")
     @Test
     @DisplayName("chunk all chapters — write to ~/Downloads/Avatamsaka_Sutra")
@@ -160,12 +166,6 @@ class PdfChunkServiceTest {
         assertThat(manifest).hasSize(expectedTotal);
         for (PdfChunk chunk : manifest) {
             assertThat(chunk.sizeBytes()).isGreaterThan(0);
-        }
-    }
-
-    private static int pageCount(byte[] pdf) throws IOException {
-        try (PDDocument document = Loader.loadPDF(pdf)) {
-            return document.getNumberOfPages();
         }
     }
 }

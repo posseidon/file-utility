@@ -44,6 +44,13 @@ public final class LocalFileSystemStorage implements SourceResolver, OutputSink 
         }
     }
 
+    private static Path asPath(FileReference reference) {
+        if (reference instanceof LocalFileReference local) {
+            return local.path();
+        }
+        throw new FileUtilityException("Unsupported reference for local storage: " + reference);
+    }
+
     @Override
     public StoredObject write(FileReference target, InputStream content) {
         Path path = asPath(target);
@@ -60,12 +67,5 @@ public final class LocalFileSystemStorage implements SourceResolver, OutputSink 
         } catch (IOException e) {
             throw new FileUtilityException("Unable to write file: " + path, e);
         }
-    }
-
-    private static Path asPath(FileReference reference) {
-        if (reference instanceof LocalFileReference local) {
-            return local.path();
-        }
-        throw new FileUtilityException("Unsupported reference for local storage: " + reference);
     }
 }

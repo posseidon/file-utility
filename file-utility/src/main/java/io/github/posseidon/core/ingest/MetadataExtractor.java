@@ -1,7 +1,9 @@
 package io.github.posseidon.core.ingest;
 
+import io.github.posseidon.core.classify.DocumentTypeClassifier;
 import io.github.posseidon.core.detect.ContentTypeDetector;
 import io.github.posseidon.core.hash.Hasher;
+import io.github.posseidon.core.model.DocumentInsights;
 import io.github.posseidon.core.model.FileMetadata;
 import io.github.posseidon.core.model.MediaType;
 import io.github.posseidon.core.util.FileUtility;
@@ -10,6 +12,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.BodyContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.helpers.DefaultHandler;
@@ -30,23 +33,37 @@ import java.util.Map;
  * 3. MIME          — Tika magic-byte sniff via {@link io.github.posseidon.core.detect.ContentTypeDetector}
  * 4. SHA-256       — full file read via {@link Hasher}
  * 5. Rich metadata — Tika AutoDetectParser (EXIF, video container, etc.) → extra map
+ * 6. Document type — optional zero-shot LLM classification via {@link DocumentTypeClassifier}
+ * <p>
  * Step 5 uses AutoDetectParser from tika-core; actual format parsers (EXIF, MP4, etc.)
  * are loaded via ServiceLoader — present at runtime in watcher-lab, injected in Spring.
  * If no parser is available for a format, extra is empty (best-effort, never throws).
+ * <p>
+ * Step 6 is only performed when a {@link DocumentTypeClassifier} is supplied. The Tika text
+ * extraction is capped at {@value #TEXT_EXTRACTION_LIMIT} chars to keep LLM token counts low.
  */
 public final class MetadataExtractor {
 
     private static final Logger log = LoggerFactory.getLogger(MetadataExtractor.class);
+    private static final int TEXT_EXTRACTION_LIMIT = 4_000;
+
     // AutoDetectParser is thread-safe; a single shared instance is fine.
     private static final AutoDetectParser PARSER = new AutoDetectParser();
 
     private final Hasher hasher;
     private final ContentTypeDetector mimeDetector;
     private final HostnameService hostnameProvider = new HostnameService();
+    private final DocumentTypeClassifier classifier;
 
     public MetadataExtractor(Hasher hasher, ContentTypeDetector mimeDetector) {
+        this(hasher, mimeDetector, null);
+    }
+
+    public MetadataExtractor(Hasher hasher, ContentTypeDetector mimeDetector,
+                             DocumentTypeClassifier classifier) {
         this.hasher = hasher;
         this.mimeDetector = mimeDetector;
+        this.classifier = classifier;
     }
 
     public FileMetadata extract(Path path) throws IOException, InterruptedException {
@@ -58,6 +75,7 @@ public final class MetadataExtractor {
         String sha256 = hasher.hash(path);
         List<String> directories = FileUtility.extractDirectories(path);
         Map<String, String> extra = extractExtra(path);
+        DocumentInsights insights = analyzeIfEnabled(path);
 
         return new FileMetadata(
                 hostName,
@@ -72,7 +90,8 @@ public final class MetadataExtractor {
                 mediaType,
                 sha256,
                 directories,
-                extra
+                extra,
+                insights
         );
     }
 
@@ -97,6 +116,24 @@ public final class MetadataExtractor {
         return Map.copyOf(extra);
     }
 
+    private DocumentInsights analyzeIfEnabled(Path path) {
+        if (classifier == null) return null;
+        String text = extractText(path);
+        if (text.isBlank()) return null;
+        // join() parks the virtual thread (not the OS thread) until Ollama responds.
+        return classifier.analyzeAsync(text).join();
+    }
 
+    private String extractText(Path path) {
+        // BodyContentHandler captures extracted text; limit avoids reading huge files.
+        BodyContentHandler handler = new BodyContentHandler(TEXT_EXTRACTION_LIMIT);
+        Metadata tikaMetadata = new Metadata();
+        try (TikaInputStream in = TikaInputStream.get(path)) {
+            PARSER.parse(in, handler, tikaMetadata, new ParseContext());
+        } catch (Exception e) {
+            // write-limit exceeded or unsupported format — return whatever was captured.
+            log.debug("Tika text extraction truncated or failed for {}: {}", path.getFileName(), e.getMessage());
+        }
+        return handler.toString().strip();
+    }
 }
-

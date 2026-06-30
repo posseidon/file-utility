@@ -8,15 +8,15 @@ import java.util.List;
  */
 public record ChunkFixture(String path, String outputDir, List<ChunkSpec> chunks) {
 
-    public Path resolvedPath() {
-        return Path.of(path);
-    }
-
     /**
      * Returns the configured output directory, or a {@code chunks/} sibling of the source if unset.
      */
     public Path resolvedOutputDir() {
         return outputDir != null ? Path.of(outputDir) : resolvedPath().getParent().resolve("chunks");
+    }
+
+    public Path resolvedPath() {
+        return Path.of(path);
     }
 
     public ChunkFixture withOutputDir(Path dir) {

@@ -29,9 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class PdfChunkService {
 
     private static final System.Logger LOGGER = System.getLogger(PdfChunkService.class.getName());
-
-    private record IndexedRange(int index, PageRange range, LocalChunkNaming naming) {}
-
     private final OutputSink outputSink;
 
     public PdfChunkService(OutputSink outputSink) {
@@ -160,4 +157,6 @@ public final class PdfChunkService {
                 new ByteArrayInputStream(content.content()));
         return new PdfChunk(content.range(), stored);
     }
+
+    private record IndexedRange(int index, PageRange range, LocalChunkNaming naming) {}
 }

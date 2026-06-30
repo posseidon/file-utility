@@ -193,6 +193,18 @@ class MetadataExtractorTest {
     }
 
     // -------------------------------------------------------------------------
+    // Document type
+    // -------------------------------------------------------------------------
+
+    @Test
+    void insightsIsNullWhenNoAnalyzerConfigured(@TempDir Path tmp) throws IOException, InterruptedException {
+        Path file = tmp.resolve("notes.txt");
+        Files.writeString(file, "hello, world");
+
+        assertThat(extractor.extract(file).insights()).isNull();
+    }
+
+    // -------------------------------------------------------------------------
     // Thread safety
     // -------------------------------------------------------------------------
 
