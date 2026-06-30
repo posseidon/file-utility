@@ -114,7 +114,7 @@ class FileDiscoveryOrchestratorTest {
 
         assertThatThrownBy(() ->
                 new FileDiscoveryOrchestrator(
-                        path -> { throw new IOException("first fails"); },
+                        path -> {throw new IOException("first fails");},
                         path -> secondCallCount.incrementAndGet()
                 ).discoverAndProcess(tmp))
                 .isInstanceOf(IOException.class);
@@ -132,7 +132,7 @@ class FileDiscoveryOrchestratorTest {
 
         assertThatThrownBy(() ->
                 new FileDiscoveryOrchestrator(
-                        path -> { throw new IOException("processor failure"); }
+                        path -> {throw new IOException("processor failure");}
                 ).discoverAndProcess(tmp))
                 .isInstanceOf(IOException.class)
                 .hasMessage("processor failure");
@@ -144,7 +144,7 @@ class FileDiscoveryOrchestratorTest {
 
         assertThatThrownBy(() ->
                 new FileDiscoveryOrchestrator(
-                        path -> { throw new IllegalStateException("bad state"); }
+                        path -> {throw new IllegalStateException("bad state");}
                 ).discoverAndProcess(tmp))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("bad state");

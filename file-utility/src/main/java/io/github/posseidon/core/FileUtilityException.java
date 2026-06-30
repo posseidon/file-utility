@@ -1,6 +1,8 @@
 package io.github.posseidon.core;
 
-/** Unchecked exception for failures within the file-utility library. */
+/**
+ * Unchecked exception for failures within the file-utility library.
+ */
 public class FileUtilityException extends RuntimeException {
 
     public FileUtilityException(String message) {

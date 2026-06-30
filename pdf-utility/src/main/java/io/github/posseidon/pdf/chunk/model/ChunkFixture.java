@@ -3,14 +3,18 @@ package io.github.posseidon.pdf.chunk.model;
 import java.nio.file.Path;
 import java.util.List;
 
-/** A PDF source paired with the named chunks to extract from it and where to write them. */
+/**
+ * A PDF source paired with the named chunks to extract from it and where to write them.
+ */
 public record ChunkFixture(String path, String outputDir, List<ChunkSpec> chunks) {
 
     public Path resolvedPath() {
         return Path.of(path);
     }
 
-    /** Returns the configured output directory, or a {@code chunks/} sibling of the source if unset. */
+    /**
+     * Returns the configured output directory, or a {@code chunks/} sibling of the source if unset.
+     */
     public Path resolvedOutputDir() {
         return outputDir != null ? Path.of(outputDir) : resolvedPath().getParent().resolve("chunks");
     }

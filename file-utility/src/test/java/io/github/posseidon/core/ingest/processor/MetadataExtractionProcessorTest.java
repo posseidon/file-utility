@@ -80,7 +80,7 @@ class MetadataExtractionProcessorTest {
     @Test
     void ioExceptionFromConsumerPropagates(@TempDir Path tmp) throws IOException {
         Path file = Files.writeString(tmp.resolve("file.txt"), "x");
-        MetadataConsumer failing = meta -> { throw new IOException("sink failure"); };
+        MetadataConsumer failing = meta -> {throw new IOException("sink failure");};
 
         assertThatThrownBy(() ->
                 new MetadataExtractionProcessor(extractor, failing).process(file))

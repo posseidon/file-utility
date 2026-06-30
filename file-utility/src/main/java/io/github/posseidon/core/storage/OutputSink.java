@@ -4,10 +4,14 @@ import io.github.posseidon.core.reference.FileReference;
 
 import java.io.InputStream;
 
-/** Writes content to a storage backend. */
+/**
+ * Writes content to a storage backend.
+ */
 public interface OutputSink {
 
-    /** Whether this sink can handle the given target reference. */
+    /**
+     * Whether this sink can handle the given target reference.
+     */
     boolean supports(FileReference reference);
 
     /**

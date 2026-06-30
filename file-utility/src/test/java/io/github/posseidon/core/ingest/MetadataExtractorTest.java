@@ -22,8 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MetadataExtractorTest {
 
     // Magic bytes sufficient for Tika content-type detection (no real parsing needed).
-    private static final byte[] PNG_MAGIC  = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
-    private static final byte[] PDF_MAGIC  = "%PDF-1.4\n%%EOF".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] PNG_MAGIC = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
+    private static final byte[] PDF_MAGIC = "%PDF-1.4\n%%EOF".getBytes(StandardCharsets.US_ASCII);
 
     private final MetadataExtractor extractor =
             new MetadataExtractor(new Sha256Hash(), new ContentTypeDetector());

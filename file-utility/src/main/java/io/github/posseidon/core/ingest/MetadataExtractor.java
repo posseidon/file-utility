@@ -19,16 +19,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Assembles a {@link FileMetadata} for a single file.
  * Extraction steps (sequential here; L4 will fan them out in parallel):
- *   1. FS attributes — path, size, timestamps (single syscall)
- *   2. Owner         — FileOwnerAttributeView
- *   3. MIME          — Tika magic-byte sniff via {@link io.github.posseidon.core.detect.ContentTypeDetector}
- *   4. SHA-256       — full file read via {@link Hasher}
- *   5. Rich metadata — Tika AutoDetectParser (EXIF, video container, etc.) → extra map
+ * 1. FS attributes — path, size, timestamps (single syscall)
+ * 2. Owner         — FileOwnerAttributeView
+ * 3. MIME          — Tika magic-byte sniff via {@link io.github.posseidon.core.detect.ContentTypeDetector}
+ * 4. SHA-256       — full file read via {@link Hasher}
+ * 5. Rich metadata — Tika AutoDetectParser (EXIF, video container, etc.) → extra map
  * Step 5 uses AutoDetectParser from tika-core; actual format parsers (EXIF, MP4, etc.)
  * are loaded via ServiceLoader — present at runtime in watcher-lab, injected in Spring.
  * If no parser is available for a format, extra is empty (best-effort, never throws).
@@ -51,10 +52,11 @@ public final class MetadataExtractor {
     public FileMetadata extract(Path path) throws IOException, InterruptedException {
         BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
         String hostName = hostnameProvider.getMachineName();
-        String owner        = FileUtility.readOwner(path);
-        String mime         = mimeDetector.detect(path);
+        String owner = FileUtility.readOwner(path);
+        String mime = mimeDetector.detect(path);
         MediaType mediaType = MediaType.fromMime(mime);
-        String sha256       = hasher.hash(path);
+        String sha256 = hasher.hash(path);
+        List<String> directories = FileUtility.extractDirectories(path);
         Map<String, String> extra = extractExtra(path);
 
         return new FileMetadata(
@@ -69,6 +71,7 @@ public final class MetadataExtractor {
                 mime,
                 mediaType,
                 sha256,
+                directories,
                 extra
         );
     }

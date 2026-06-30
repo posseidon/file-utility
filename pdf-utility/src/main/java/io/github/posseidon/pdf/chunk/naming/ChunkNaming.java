@@ -3,7 +3,9 @@ package io.github.posseidon.pdf.chunk.naming;
 import io.github.posseidon.core.reference.FileReference;
 import io.github.posseidon.pdf.chunk.model.PageRange;
 
-/** Strategy that produces the output target for each chunk. */
+/**
+ * Strategy that produces the output target for each chunk.
+ */
 @FunctionalInterface
 public interface ChunkNaming {
 

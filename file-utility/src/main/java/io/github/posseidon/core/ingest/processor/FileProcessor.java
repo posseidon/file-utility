@@ -7,9 +7,14 @@ import java.util.concurrent.Callable;
 public interface FileProcessor {
     void process(Path path) throws IOException, InterruptedException;
 
-    /** Binds this processor to a specific path, producing a {@link Callable} the executor can submit directly. */
+    /**
+     * Binds this processor to a specific path, producing a {@link Callable} the executor can submit directly.
+     */
     default Callable<Void> bind(Path path) {
-        return () -> { process(path); return null; };
+        return () -> {
+            process(path);
+            return null;
+        };
     }
 
     default FileProcessor andThen(FileProcessor next) {

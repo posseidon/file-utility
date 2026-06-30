@@ -3,7 +3,9 @@ package io.github.posseidon.pdf.chunk.model;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Parses textual page-range specifications into {@link PageRange} values. */
+/**
+ * Parses textual page-range specifications into {@link PageRange} values.
+ */
 public final class PageRanges {
 
     private PageRanges() {

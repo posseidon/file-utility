@@ -7,12 +7,18 @@ package io.github.posseidon.core.reference;
  */
 public interface FileReference {
 
-    /** Scheme identifying the backend, e.g. {@code "file"} or {@code "blob"}. */
+    /**
+     * Scheme identifying the backend, e.g. {@code "file"} or {@code "blob"}.
+     */
     String scheme();
 
-    /** Raw locator within the backend (a path, a blob URI, ...). */
+    /**
+     * Raw locator within the backend (a path, a blob URI, ...).
+     */
     String location();
 
-    /** A short display/file name for this reference. */
+    /**
+     * A short display/file name for this reference.
+     */
     String name();
 }
